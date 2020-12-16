@@ -37,24 +37,7 @@ def fetches_dic(reddit):
         n += 1
     return song_dic
 
-def play_music(url_list,song_dic):
-    '''
-    This loops through the url liust
-    and starting with index 0 opens song link
-    in google 
-    the next song can be played on user input
-    '''
-    i = 0
-    end_state = True
-    print('-------------------------------------')
-    while end_state:
-        menu_start = input('choose a number to play a song:\n')
-        if menu_start.isnumeric() == True:   
-            webbrowser.open(song_dic[int(menu_start)])
-        elif menu_start == 'stop':
-            break
-    
-            
+        
 def main():
     reddit = praw.Reddit(client_id='sVRGjVMPWmQPGg',
                         client_secret='l9A7fN0i_mHHisvz1qaEMZh-NTY',
@@ -64,8 +47,25 @@ def main():
 
     url_list = fetches_titles(reddit)
     song_dic = fetches_dic(reddit)
-    print('-----------------------------------')
-    print('NOW PLAYING:')
-    play_music(url_list,song_dic)
+
+    '''
+    This loops through the url liust
+    and starting with index 0 opens song link
+    in google 
+    the next song can be played on user input
+    '''
+    i = 0
+    print('-----------------------------------------')
+    print('NOW PLAYING: ' + str(song_dic[int(menu_start)]) )
+    while True:
+        menu_start = input('choose a number to play a song:\n')
+        print('-------------------------------------')
+        print('NOW PLAYING: ' + str(song_dic[int(menu_start)]) )
+        if menu_start.isnumeric() == True:
+            webbrowser.open(song_dic[int(menu_start)])
+        elif menu_start == 'stop':
+            break
+
+    
 
 main()
