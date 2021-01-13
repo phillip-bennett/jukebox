@@ -5,67 +5,91 @@
 ##
 
 import praw
-import webbrowser
 import os
+import json
+import requests
+from secret import spotify_token,spotify_user_id
 
 
-def fetches_titles(reddit):
+def search_music(tmp_title,tmp_artist):
     '''
-    This returns the titles of the music
-    ## and the youtube is added to a LIST
-    ## when the user requests it
+        search for music using the artist and title
     '''
-    url_list = []
-    n = 1
-    for submission in reddit.subreddit('listentothis').new(limit=10):
-        print(str(n) +' '+submission.title)
-        url_list.append(submission.url)
-        n += 1
-    return url_list
 
-def fetches_dic(reddit):
-    '''
-    this makes a dictionary
-    of the song name as the key
-    and the song url as the value
-    through the first 10 post
-    '''
-    song_dic = dict() 
-    n = 1
-    for submission in reddit.subreddit('listentothis').new(limit=10):
-        song_dic[n] = submission.url
-        n += 1
-    return song_dic
+    foo = '%20'
+    title = foo.join(tmp_title)
+    artist = foo.join(tmp_artist)
 
-        
+    query = 'https://api.spotify.com/v1/search?q=track:'+title+'%20artist:'+artist+'&type=track'.format(
+        title,
+        artist
+    )
+    response = requests.get(
+        query,
+        headers={
+            "content-type": "application/json",
+            "Authorization": "Bearer {}".format(spotify_token)
+        }
+    )
+
+    response_json = response.json()
+    songs = response_json["tracks"]["items"]
+    uri = songs[0]["uri"]
+            
+    return uri  
+
+def add_to_queue(song_id):
+    '''
+        adds the songs to the queue
+    '''
+    query = 'https://api.spotify.com/v1/me/player/queue?uri='+song_id.format(song_id)
+    response = requests.post(
+        query,
+        headers={
+            "content-type": "application/json",
+            "Authorization": "Bearer {}".format(spotify_token)
+        }
+    )
+
+
 def main():
+    '''
+        This returns the titles of the music
+    '''
     reddit = praw.Reddit(client_id='sVRGjVMPWmQPGg',
                         client_secret='l9A7fN0i_mHHisvz1qaEMZh-NTY',
                         user_agent='tiger king',
                         username='music_tastes_good',
                         password="All4fun!@#$%^&")
-
-    url_list = fetches_titles(reddit)
-    song_dic = fetches_dic(reddit)
-
-    '''
-    This loops through the url liust
-    and starting with index 0 opens song link
-    in google 
-    the next song can be played on user input
-    '''
-    i = 0
-    print('-----------------------------------------')
-    print('NOW PLAYING: ' + str(song_dic[int(menu_start)]) )
-    while True:
-        menu_start = input('choose a number to play a song:\n')
-        print('-------------------------------------')
-        print('NOW PLAYING: ' + str(song_dic[int(menu_start)]) )
-        if menu_start.isnumeric() == True:
-            webbrowser.open(song_dic[int(menu_start)])
-        elif menu_start == 'stop':
-            break
-
     
+    title_list = []
+    n = 1
+    for submission in reddit.subreddit('listentothis').new(limit=20):
+        print(str(n) +' '+submission.title)
+
+        temp = submission.title.split()
+        for i in temp:
+            if '[' in i:
+                num = temp.index(i)
+        if '--' in temp:
+            tmp_title = temp[temp.index('--')+1:num]
+            tmp_artist = temp[:temp.index('--')]
+        elif '—' in temp:
+            tmp_title = temp[temp.index('—')+1:num]
+            tmp_artist = temp[:temp.index('—')]
+        elif '-' in temp:
+            tmp_title = temp[temp.index('-')+1:num]
+            tmp_artist = temp[:temp.index('-')]
+        try:    
+            uri = search_music(tmp_title,tmp_artist)
+        except:
+            continue
+
+        title_list.append(uri)
+        n += 1 
+
+    for i in title_list:
+        add_to_queue(i)
+
 
 main()
